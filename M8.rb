@@ -1,7 +1,31 @@
+##| with_fx :ping_pong do
+##|   sample :ambi_lunar_land, rate: 0.5, release: 3, amp: 0.4
+##| end
+
+live_loop :hiss do
+  sample :vinyl_hiss
+  sleep sample_duration :vinyl_hiss
+end
+
+sleep 8
+
+in_thread(name: :drums) do
+  live_loop :drums do
+    with_fx :reverb, mix: 0.8 do
+      sample :elec_mid_snare
+      sleep 2
+      sample :perc_snap2, amp: 0.3
+      sleep 2
+    end
+  end
+end
+
 in_thread(name: :main_chords) do
   use_synth :dark_ambience
-  define :chord_player do |root , mM, inversion|
-    play (chord_invert (chord root, mM), inversion), amp: 1, release: 9, attack: 1
+  with_fx :pitch_shift do
+    define :chord_player do |root , mM, inversion|
+      play (chord_invert (chord root, mM), inversion), amp: 1, release: 9, attack: 1
+    end
   end
   
   live_loop :main_chords do
@@ -23,35 +47,82 @@ in_thread(name: :main_chords) do
   end
 end
 
-live_loop :piano do
-  use_synth :piano
-  with_fx :reverb, pre_mix: 0.5, mix: 1 do
-    with_fx :echo, mix: 0.2  do
-      play_pattern_timed chord(:f5, :major7), 2, release: 8
+
+in_thread(name: :piano) do
+  define :upeggio do |chord, mM, num_times, sleep_time|
+    num_times.times do
+      use_synth :piano
+      with_fx :reverb, pre_mix: 0.5, mix: 1 do
+        with_fx :echo, mix: 0.2 do
+          with_fx :ping_pong do
+            play (chord chord, mM).tick
+            sleep sleep_time
+          end
+        end
+      end
     end
   end
-  sleep 8
+  
+  define :downeggio do |chord, mM, num_times, sleep_time|
+    num_times.times do
+      use_synth :piano
+      with_fx :reverb, pre_mix: 0.5, mix: 1 do
+        with_fx :echo, mix: 0.2 do
+          with_fx :ping_pong do
+            play (chord chord, mM).reverse.tick
+            sleep sleep_time
+          end
+        end
+      end
+    end
+  end
+  
+  upeggio(:f5, :major7, 4, 2)
+  downeggio(:f5, :major7, 4, 2)
+  upeggio(:d5, :minor7, 4, 2)
+  downeggio(:d5, :major7, 4, 2)
+  upeggio(:g5, :minor7, 4, 2)
+  downeggio(:c5, :major7, 4, 2)
+  upeggio(:f5, :major, 3, 2)
+  play :f6
 end
+
 
 in_thread(name: :bassline) do
   live_loop :bassline do
     use_synth :fm
     amount = 8
-    play :f2, sustain: 2, release: 4
+    play :f2, sustain: 2, release: 2, amp: 0.4
+    sleep 3
+    play :a2, sustain: 1, release: 1, amp: 0.4
+    sleep 1
+    play :c3, sustain: 2, release: 2, amp: 0.4
+    sleep 4
+    play :d2, sustain: 2, release: 2, amp: 0.4
+    sleep 3
+    play :e3, sustain: 1, release: 1, amp: 0.4
+    sleep 1
+    play :d3, sustain: 2, release: 2, amp: 0.4
+    sleep 4
+    play :d2, sustain: 2, release: 4, amp: 0.4
     sleep amount
-    play :f2, sustain: 2, release: 4
+    play :d2, sustain: 2, release: 4, amp: 0.4
+    sleep 7
+    play :f2, sustain: 1, release: 1, amp: 0.4
+    sleep 1
+    play :g2, sustain: 2, release: 4, amp: 0.4
+    sleep 7
+    play :b2, sustain: 1, release: 1, amp: 0.4
+    sleep 1
+    play :c3, sustain: 2, release: 4, amp: 0.4
     sleep amount
-    play :d2, sustain: 2, release: 4
-    sleep amount
-    play :d2, sustain: 2, release: 4
-    sleep amount
-    play :g2, sustain: 2, release: 4
-    sleep amount
-    play :c2, sustain: 2, release: 4
-    sleep amount
-    play :f2, sustain: 2, release: 4
+    play :f2, sustain: 2, release: 4, amp: 0.4
     sleep amount
   end
 end
+
+##| sleep 64
+##| in_thread(:name :second_phase) do
+##|   live_loop
 
 
